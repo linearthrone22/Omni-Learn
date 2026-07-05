@@ -6,9 +6,10 @@ interface Props {
   records: AcademicRecord[];
   docs: DocumentRecord[];
   onAddRecord: () => void;
+  onShareLink: () => void;
 }
 
-export function Dashboard({ user, records, docs, onAddRecord }: Props) {
+export function Dashboard({ user, records, docs, onAddRecord, onShareLink }: Props) {
   const avg = records.length ? records.reduce((s, r) => s + r.grade, 0) / records.length : 0;
   const onchain = records.filter(draft => draft.onchain).length;
   const subjectsStr = new Set(records.map(r => r.subject)).size;
@@ -37,7 +38,15 @@ export function Dashboard({ user, records, docs, onAddRecord }: Props) {
           <div className="crumb">Ringkasan Akademik</div>
           <h1>Halo, {user.name.split(' ')[0]} 👋</h1>
         </div>
-        <button className="btn-add" onClick={onAddRecord}>＋ Tambah Nilai</button>
+        <div style={{ display: 'flex', gap: '8px' }} className="no-print">
+          <button className="btn-add" style={{ background: '#3A4B6E' }} onClick={onShareLink}>
+            🔗 Salin Link
+          </button>
+          <button className="btn-add" style={{ background: '#5E7A8E' }} onClick={() => window.print()}>
+            🖨️ Cetak PDF
+          </button>
+          <button className="btn-add" onClick={onAddRecord}>＋ Tambah Nilai</button>
+        </div>
       </div>
       <div className="role-note">{ROLE_META[user.role].note}</div>
 

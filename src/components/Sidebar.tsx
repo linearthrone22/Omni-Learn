@@ -25,9 +25,9 @@ export function Sidebar({ user, currentView, onNavigate, onLogout }: Props) {
       <button className={navClass('records')} onClick={() => onNavigate('records')}><span className="ni">📑</span> Rekam Nilai</button>
       <button className={navClass('documents')} onClick={() => onNavigate('documents')}><span className="ni">🎖</span> Prestasi & Dokumen</button>
       
-      <div className="nav-label">Segera (Phase 2–3)</div>
-      <button className="nav-item" style={{ opacity: 0.5, cursor: 'not-allowed' }}><span className="ni">⛓</span> Verifikasi Chain</button>
-      <button className="nav-item" style={{ opacity: 0.5, cursor: 'not-allowed' }}><span className="ni">🤖</span> AI Assistant</button>
+      <div className="nav-label">Fitur Cerdas (Phase 2–3)</div>
+      <button className={navClass('chain')} onClick={() => onNavigate('chain')}><span className="ni">⛓</span> Verifikasi Chain</button>
+      <button className={navClass('ai')} onClick={() => onNavigate('ai')}><span className="ni">🤖</span> AI Assistant</button>
       
       <div className="sidebar-user">
         <div className="avatar">{user.name[0].toUpperCase()}</div>

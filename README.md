@@ -52,6 +52,48 @@ Saat ini, aplikasi berjalan pada **Phase 1**, yakni prototipe fungsional antarmu
 > * **Password:** `demo123`  
 > *(Akun ini telah dilengkapi dengan nilai awal acak dan dokumen portofolio sebagai bukti konsep).*
 
+## ☁️ Panduan Deploy Gratis di Vercel
+
+Karena Anda memiliki **GitHub Student Developer Pack**, Anda dapat men-deploy aplikasi full-stack (React + Serverless API) ini ke **Vercel** secara gratis dan sangat mudah dengan integrasi otomatis.
+
+### Langkah-langkah Deployment:
+
+1. **Hubungkan Kode ke GitHub**:
+   - Buat repositori baru di akun GitHub Anda (misal: `omni-learn`).
+   - Push seluruh kode proyek ini ke repositori tersebut:
+     ```bash
+     git init
+     git add .
+     git commit -m "Initial commit"
+     git branch -M main
+     git remote add origin https://github.com/USERNAME/REPOS_NAME.git
+     git push -u origin main
+     ```
+
+2. **Daftar/Masuk ke Vercel**:
+   - Pergi ke [Vercel](https://vercel.com) dan daftar menggunakan akun GitHub Anda.
+
+3. **Import Project di Vercel**:
+   - Klik tombol **"Add New"** -> **"Project"**.
+   - Pilih repositori `omni-learn` dari daftar repositori GitHub Anda yang terhubung.
+
+4. **Konfigurasi Project**:
+   - **Framework Preset**: Pilih **Vite** (Vercel akan mendeteksinya secara otomatis).
+   - **Root Directory**: Biarkan default (`./`).
+   - **Build Command**: `npm run build` atau biarkan default Vercel untuk Vite.
+   - **Output Directory**: `dist` (Vercel mendeteksinya secara otomatis).
+
+5. **Tambahkan Environment Variables**:
+   - Di bagian **Environment Variables** sebelum klik deploy, tambahkan:
+     * **Key**: `GEMINI_API_KEY`
+     * **Value**: *(Masukkan kunci API Gemini Anda)*
+     * *(Opsional)* **Key**: `APP_URL` | **Value**: *(Gunakan URL deployment Vercel Anda nantinya)*
+
+6. **Klik Deploy** 🚀:
+   - Klik tombol **Deploy** dan tunggu proses build selesai (kurang dari 1 menit).
+   - Vercel akan otomatis menyajikan aplikasi Anda dengan domain HTTPS gratis (contoh: `omni-learn.vercel.app`).
+   - Setiap kali Anda melakukan `git push` ke GitHub, Vercel akan otomatis melakukan build dan update versi terbaru secara real-time!
+
 ## 🗺️ Roadmap Pengembangan
 
 * [x] **Phase 1: Foundation (Aktif Saat Ini)** – UI/UX, Local Hashing, Analytics Dashboard, Document Management, Simulasi Ledger Kriptografis.

@@ -51,7 +51,7 @@ export function Records({ records, onAddRecord }: Props) {
                       {r.onchain ? (
                         <span className="pill-ok">⛓ On-chain</span>
                       ) : (
-                        <span className="chain-tag">⏳ Menunggu Phase 2</span>
+                        <span className="chain-tag" style={{ background: '#FEF3C7', color: '#B45309' }}>⏳ Belum On-chain</span>
                       )}
                     </td>
                   </tr>

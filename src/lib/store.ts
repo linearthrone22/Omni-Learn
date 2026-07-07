@@ -1,4 +1,4 @@
-import { User, AcademicRecord, DocumentRecord } from '../types';
+import { User, AcademicRecord, DocumentRecord, ChainTransaction } from '../types';
 
 const mem: Record<string, any> = {};
 
@@ -29,6 +29,22 @@ export async function getRecords(email: string): Promise<AcademicRecord[]> {
 
 export async function getDocs(email: string): Promise<DocumentRecord[]> {
   return (await store.get<DocumentRecord[]>('docs_' + email)) || [];
+}
+
+export async function getChainTransactions(): Promise<ChainTransaction[]> {
+  return (await store.get<ChainTransaction[]>('chain_transactions')) || [];
+}
+
+export async function saveChainTransactions(txs: ChainTransaction[]) {
+  await store.set('chain_transactions', txs);
+}
+
+export async function getWallet(email: string): Promise<string | null> {
+  return await store.get<string>('wallet_' + email);
+}
+
+export async function saveWallet(email: string, wallet: string) {
+  await store.set('wallet_' + email, wallet);
 }
 
 export async function seedFor(email: string, full: boolean) {

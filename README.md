@@ -1,5 +1,34 @@
 # Omni Learn
 
+> Status final demo: Omni Learn sekarang mencakup auth multi-peran, dashboard akademik, input nilai dengan SHA-256 fingerprint, portofolio dokumen, simulasi wallet/blockchain, QR public verification, AI Learning Assistant lokal, dan export portofolio via halaman cetak/PDF.
+
+## Cara Menjalankan
+
+```bash
+npm install
+npm run dev
+```
+
+Buka `http://localhost:3000`.
+
+Akun demo:
+
+- Email: `andini@sekolah.id`
+- Password: `demo123`
+
+## Fitur Final Prototype
+
+- Auth Register/Login untuk Siswa, Orang Tua, dan Admin Sekolah.
+- Dashboard dengan statistik nilai, tren semester, aktivitas terbaru, dan status verifikasi.
+- Rekam Nilai dengan hash SHA-256 untuk setiap catatan akademik.
+- Portofolio dokumen/prestasi dengan status pending atau on-chain.
+- Simulasi wallet dan mint hash ke ledger lokal.
+- QR/link verifikasi publik dengan payload proof mandiri.
+- AI Learning Assistant lokal untuk membaca pola nilai dan membuat rekomendasi belajar.
+- Export portofolio ke halaman siap cetak atau simpan sebagai PDF.
+
+---
+
 **Rekam jejak akademik digital berbasis Web3 dan AI.**
 
 ---

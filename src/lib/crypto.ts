@@ -10,3 +10,14 @@ export async function sha256(str: string): Promise<string> {
     return '0x' + (h >>> 0).toString(16).padStart(8, '0') + '…';
   }
 }
+
+export function shortHash(hash: string, size = 10): string {
+  if (!hash) return '-';
+  if (hash.length <= size * 2) return hash;
+  return `${hash.slice(0, size)}...${hash.slice(-6)}`;
+}
+
+export function makeId(prefix = 'id'): string {
+  const randomPart = Math.random().toString(36).slice(2, 9);
+  return `${prefix}_${Date.now().toString(36)}_${randomPart}`;
+}

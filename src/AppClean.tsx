@@ -319,6 +319,7 @@ export default function AppClean() {
         )}
         {view === 'chain' && (
           <ChainVerification
+            user={user}
             records={records}
             docs={docs}
             txs={txs}

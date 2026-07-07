@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import QRCode from 'qrcode';
-import { CheckCircle2, Copy, Link2, QrCode, Search, ShieldCheck, Wallet } from 'lucide-react';
+import { CheckCircle2, Copy, Link2, QrCode, ShieldCheck, Wallet } from 'lucide-react';
 import { buildProofUrl } from '../lib/proof';
 import { shortHash } from '../lib/crypto';
-import { AcademicRecord, ChainTransaction, DocumentRecord } from '../types';
+import { AcademicRecord, ChainTransaction, DocumentRecord, User } from '../types';
 
 interface Props {
+  user: User;
   records: AcademicRecord[];
   docs: DocumentRecord[];
   txs: ChainTransaction[];
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function ChainVerification({
+  user,
   records,
   docs,
   txs,
@@ -29,26 +31,55 @@ export function ChainVerification({
   onCopyLink,
 }: Props) {
   const [qrMap, setQrMap] = useState<Record<string, string>>({});
-  const [searchHash, setSearchHash] = useState('');
-  const [verificationResult, setVerificationResult] = useState<{
-    title: string;
-    type: string;
-    hash: string;
-    status: string;
-    onchain: boolean;
-  } | null>(null);
-  const [verificationError, setVerificationError] = useState('');
   const pendingRecords = records.filter((record) => !record.onchain);
   const pendingDocs = docs.filter((doc) => !doc.onchain);
   const verifiedCount = records.filter((record) => record.onchain).length + docs.filter((doc) => doc.onchain).length;
   const totalCount = records.length + docs.length;
 
   const latestTxs = useMemo(() => [...txs].sort((a, b) => b.ts - a.ts).slice(0, 8), [txs]);
+  const proofItems = useMemo(() => {
+    const byHash = new Map<string, ChainTransaction>();
+    latestTxs.forEach((tx) => byHash.set(tx.hash, tx));
+
+    records.filter((record) => record.onchain).forEach((record, index) => {
+      if (byHash.has(record.hash)) return;
+      byHash.set(record.hash, {
+        id: record.txId || `proof_record_${record.id || record.hash}`,
+        entity: 'record',
+        entityId: record.id || record.hash,
+        hash: record.hash,
+        title: `${record.subject} - ${record.semester}`,
+        ownerEmail: user.email,
+        ownerName: user.name,
+        block: 420000 + index + 1,
+        ts: record.verifiedAt || record.ts || Date.now(),
+        wallet: wallet || '0x0000000000000000000000000000000000000000',
+      });
+    });
+
+    docs.filter((doc) => doc.onchain).forEach((doc, index) => {
+      if (byHash.has(doc.hash)) return;
+      byHash.set(doc.hash, {
+        id: doc.txId || `proof_doc_${doc.id || doc.hash}`,
+        entity: 'document',
+        entityId: doc.id || doc.hash,
+        hash: doc.hash,
+        title: doc.title,
+        ownerEmail: user.email,
+        ownerName: user.name,
+        block: 430000 + index + 1,
+        ts: doc.verifiedAt || Date.now(),
+        wallet: wallet || '0x0000000000000000000000000000000000000000',
+      });
+    });
+
+    return [...byHash.values()].sort((a, b) => b.ts - a.ts).slice(0, 6);
+  }, [latestTxs, records, docs, user.email, user.name, wallet]);
 
   useEffect(() => {
     let mounted = true;
     async function makeQrCodes() {
-      const entries = await Promise.all(latestTxs.slice(0, 3).map(async (tx) => {
+      const entries = await Promise.all(proofItems.map(async (tx) => {
         const data = await QRCode.toDataURL(buildProofUrl(tx), {
           width: 150,
           margin: 1,
@@ -64,45 +95,7 @@ export function ChainVerification({
     return () => {
       mounted = false;
     };
-  }, [latestTxs]);
-
-  const verifyHash = () => {
-    const term = searchHash.trim();
-    setVerificationResult(null);
-    setVerificationError('');
-
-    if (!term) {
-      setVerificationError('Masukkan hash SHA-256 terlebih dahulu.');
-      return;
-    }
-
-    const foundRecord = records.find((record) => record.hash === term || record.hash.startsWith(term));
-    const foundDoc = docs.find((doc) => doc.hash === term || doc.hash.startsWith(term));
-
-    if (foundRecord) {
-      setVerificationResult({
-        title: foundRecord.subject,
-        type: `Nilai akademik - ${foundRecord.semester}`,
-        hash: foundRecord.hash,
-        status: foundRecord.onchain ? 'Terverifikasi on-chain' : 'Terdaftar lokal, belum dimint',
-        onchain: foundRecord.onchain,
-      });
-      return;
-    }
-
-    if (foundDoc) {
-      setVerificationResult({
-        title: foundDoc.title,
-        type: `${foundDoc.type} - ${foundDoc.sem}`,
-        hash: foundDoc.hash,
-        status: foundDoc.onchain ? 'Terverifikasi on-chain' : 'Terdaftar lokal, belum dimint',
-        onchain: foundDoc.onchain,
-      });
-      return;
-    }
-
-    setVerificationError('Hash tidak ditemukan pada ledger atau portofolio lokal.');
-  };
+  }, [proofItems]);
 
   return (
     <section className="view on">
@@ -178,14 +171,14 @@ export function ChainVerification({
         <div className="panel">
           <div className="panel-head">
             <div>
-              <h3>QR Public Verification</h3>
-              <div className="ph-sub">Scan untuk membuka bukti hash dan transaksi</div>
+              <h3>Verifikasi Publik & QR Code</h3>
+              <div className="ph-sub">QR menyimpan full hash dan payload proof, tampilan hanya memendekkan hash</div>
             </div>
           </div>
           <div className="panel-body">
-            {latestTxs.length ? (
+            {proofItems.length ? (
               <div className="qr-list">
-                {latestTxs.slice(0, 3).map((tx) => (
+                {proofItems.map((tx) => (
                   <div className="qr-card" key={tx.id}>
                     <div className="qr-img">
                       {qrMap[tx.id] ? <img src={qrMap[tx.id]} alt={`QR ${tx.title}`} /> : <QrCode size={48} />}
@@ -204,42 +197,11 @@ export function ChainVerification({
             ) : (
               <div className="empty small">
                 <QrCode size={34} />
-                <h4>Belum ada transaksi</h4>
-                <p>Mint nilai atau dokumen untuk membuat QR proof.</p>
+                <h4>Belum ada QR proof</h4>
+                <p>Mint nilai atau dokumen terlebih dahulu. Setelah on-chain, QR tampil otomatis di sini.</p>
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginTop: '20px' }}>
-        <div className="panel-head">
-          <div>
-            <h3>Audit Hash Publik</h3>
-            <div className="ph-sub">Masukkan hash dari rapor/sertifikat untuk mengecek integritasnya</div>
-          </div>
-        </div>
-        <div className="panel-body">
-          <div className="verify-row">
-            <input
-              className="verify-input"
-              placeholder="cth. 0x9f32e9a..."
-              value={searchHash}
-              onChange={(event) => setSearchHash(event.target.value)}
-              onKeyDown={(event) => { if (event.key === 'Enter') verifyHash(); }}
-            />
-            <button className="btn-secondary" onClick={verifyHash}><Search size={15} /> Cek Hash</button>
-          </div>
-          {verificationResult && (
-            <div className={`verify-result ${verificationResult.onchain ? 'ok' : 'pending'}`}>
-              <ShieldCheck size={18} />
-              <div>
-                <b>{verificationResult.title}</b>
-                <span>{verificationResult.type} - {verificationResult.status} - {shortHash(verificationResult.hash)}</span>
-              </div>
-            </div>
-          )}
-          {verificationError && <div className="inline-alert"><Search size={16} /><span>{verificationError}</span></div>}
         </div>
       </div>
 

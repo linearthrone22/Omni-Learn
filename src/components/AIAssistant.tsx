@@ -1,5 +1,7 @@
-import { Brain, CheckCircle2, ShieldCheck, Target, TrendingDown, TrendingUp } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Brain, CheckCircle2, RefreshCw, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp } from 'lucide-react';
 import { analyzeLearning } from '../lib/analysis';
+import { store } from '../lib/store';
 import { AcademicRecord, DocumentRecord, User } from '../types';
 
 interface Props {
@@ -8,11 +10,67 @@ interface Props {
   docs: DocumentRecord[];
 }
 
+interface AIAnalysisResult {
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: Array<{
+    subject: string;
+    actionPlan: string;
+    difficulty: string;
+  }>;
+  futureCareers: string[];
+}
+
 export function AIAssistant({ user, records, docs }: Props) {
   const insight = analyzeLearning(records);
   const verifiedDocs = docs.filter((doc) => doc.onchain).length;
   const verifiedRecords = records.filter((record) => record.onchain).length;
   const TrendIcon = insight.trend === 'down' ? TrendingDown : TrendingUp;
+  const [serverAnalysis, setServerAnalysis] = useState<AIAnalysisResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    store.get<AIAnalysisResult>('ai_analysis_' + user.email).then((cached) => {
+      if (cached) setServerAnalysis(cached);
+    });
+  }, [user.email]);
+
+  const runServerAnalysis = async () => {
+    if (!records.length) {
+      setError('Tambahkan nilai terlebih dahulu sebelum menjalankan AI server.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          records,
+          docs,
+          userName: user.name,
+          userRole: user.role,
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || 'AI server belum siap.');
+      }
+
+      setServerAnalysis(payload);
+      await store.set('ai_analysis_' + user.email, payload);
+    } catch (err: any) {
+      setError(err.message || 'AI server belum dapat dihubungi. Rekomendasi lokal tetap tersedia.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <section className="view on">
@@ -21,10 +79,18 @@ export function AIAssistant({ user, records, docs }: Props) {
           <div className="crumb">AI Learning Assistant</div>
           <h1>Rekomendasi Belajar Personal</h1>
         </div>
-        <div className="status-badge">
-          <ShieldCheck size={16} /> Analisis lokal
-        </div>
+        <button className="status-badge" onClick={runServerAnalysis} disabled={isLoading}>
+          {isLoading ? <RefreshCw size={16} /> : <Sparkles size={16} />}
+          {serverAnalysis ? 'Analisis ulang AI' : 'Jalankan AI Server'}
+        </button>
       </div>
+
+      {error && (
+        <div className="inline-alert">
+          <ShieldCheck size={16} />
+          <span>{error}</span>
+        </div>
+      )}
 
       <div className="ai-hero">
         <div>
@@ -67,7 +133,7 @@ export function AIAssistant({ user, records, docs }: Props) {
           <div className="panel-head">
             <div>
               <h3>Rekomendasi Adaptif</h3>
-              <div className="ph-sub">Dihitung dari ledger akademik lokal</div>
+              <div className="ph-sub">Fallback lokal yang tetap berjalan tanpa API key</div>
             </div>
           </div>
           <div className="panel-body">
@@ -101,6 +167,43 @@ export function AIAssistant({ user, records, docs }: Props) {
           </div>
         </div>
       </div>
+
+      {serverAnalysis && (
+        <div className="panel" style={{ marginTop: '20px' }}>
+          <div className="panel-head">
+            <div>
+              <h3>Analisis AI Server</h3>
+              <div className="ph-sub">Hasil dari endpoint Vercel/Express saat GEMINI_API_KEY tersedia</div>
+            </div>
+          </div>
+          <div className="panel-body">
+            <div className="server-ai">
+              <p>{serverAnalysis.summary}</p>
+              <div className="grid-2">
+                <div>
+                  <h4>Kekuatan</h4>
+                  {serverAnalysis.strengths.map((item) => <div className="recommend" key={item}><CheckCircle2 size={16} /><span>{item}</span></div>)}
+                </div>
+                <div>
+                  <h4>Area pengembangan</h4>
+                  {serverAnalysis.weaknesses.map((item) => <div className="recommend" key={item}><Target size={16} /><span>{item}</span></div>)}
+                </div>
+              </div>
+              <div className="recommend-list">
+                {serverAnalysis.recommendations.map((item) => (
+                  <div className="plan-item" key={`${item.subject}-${item.difficulty}`}>
+                    <b>{item.subject} - {item.difficulty}</b>
+                    <span>{item.actionPlan}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="career-list">
+                {serverAnalysis.futureCareers.map((career) => <span key={career}>{career}</span>)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

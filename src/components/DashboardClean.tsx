@@ -1,4 +1,4 @@
-import { Award, Bot, FileBadge2, Plus, ShieldCheck, TrendingUp } from 'lucide-react';
+import { Award, Bot, FileBadge2, Link2, Plus, ShieldCheck, TrendingUp } from 'lucide-react';
 import { AcademicRecord, DocumentRecord, User } from '../types';
 import { ChartClean } from './ChartClean';
 
@@ -7,6 +7,7 @@ interface Props {
   records: AcademicRecord[];
   docs: DocumentRecord[];
   onAddRecord: () => void;
+  onSharePortfolio: () => void;
   onNavigate: (view: string) => void;
 }
 
@@ -16,7 +17,7 @@ const roleNotes = {
   admin: 'Tampilan sekolah - mengelola catatan nilai dan dokumen siswa.',
 };
 
-export function DashboardClean({ user, records, docs, onAddRecord, onNavigate }: Props) {
+export function DashboardClean({ user, records, docs, onAddRecord, onSharePortfolio, onNavigate }: Props) {
   const avg = records.length ? records.reduce((sum, record) => sum + record.grade, 0) / records.length : 0;
   const onchainRecords = records.filter((record) => record.onchain).length;
   const onchainDocs = docs.filter((doc) => doc.onchain).length;
@@ -73,6 +74,7 @@ export function DashboardClean({ user, records, docs, onAddRecord, onNavigate }:
       <div className="quick-actions">
         <button onClick={() => onNavigate('chain')}><ShieldCheck size={17} /> Verifikasi hash ke ledger</button>
         <button onClick={() => onNavigate('ai')}><Bot size={17} /> Buka AI Assistant</button>
+        <button onClick={onSharePortfolio}><Link2 size={17} /> Salin link portofolio publik</button>
       </div>
 
       <div className="grid-2">

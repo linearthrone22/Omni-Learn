@@ -20,6 +20,7 @@ import { AuthScreenClean } from './components/AuthScreenClean';
 import { ChainVerification } from './components/ChainVerification';
 import { DashboardClean } from './components/DashboardClean';
 import { DocumentsClean } from './components/DocumentsClean';
+import { PublicPortfolio } from './components/PublicPortfolio';
 import { PublicVerification } from './components/PublicVerification';
 import { RecordsClean } from './components/RecordsClean';
 import { ToastClean } from './components/ToastClean';
@@ -37,10 +38,26 @@ export default function AppClean() {
   const [showDocModal, setShowDocModal] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const isPublicProof = useMemo(() => new URLSearchParams(window.location.search).has('verify'), []);
+  const isSharedPortfolio = useMemo(() => new URLSearchParams(window.location.search).has('share'), []);
+  const [sharedMeta, setSharedMeta] = useState<{ email: string; name: string } | null>(null);
 
   useEffect(() => {
-    ensureSeedAccount();
-    getChainTransactions().then(setTxs);
+    async function init() {
+      await ensureSeedAccount();
+      setTxs(await getChainTransactions());
+
+      const shareEmail = new URLSearchParams(window.location.search).get('share');
+      if (shareEmail) {
+        const normalizedEmail = shareEmail.trim().toLowerCase();
+        setSharedMeta({
+          email: normalizedEmail,
+          name: emailToName(normalizedEmail),
+        });
+        setRecords((await getRecords(normalizedEmail)).map(normalizeRecord));
+        setDocs((await getDocs(normalizedEmail)).map(normalizeDoc));
+      }
+    }
+    init();
   }, []);
 
   useEffect(() => {
@@ -224,6 +241,17 @@ export default function AppClean() {
     showToast('Portofolio diunduh sebagai HTML siap cetak.');
   };
 
+  const sharePortfolio = async () => {
+    if (!user) return;
+    const url = `${window.location.origin}${window.location.pathname}?share=${encodeURIComponent(user.email)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('Link portofolio publik disalin.');
+    } catch (error) {
+      window.prompt('Salin link portofolio:', url);
+    }
+  };
+
   if (isPublicProof) {
     return (
       <>
@@ -236,6 +264,21 @@ export default function AppClean() {
         />
         {toastMsg && <ToastClean message={toastMsg} />}
       </>
+    );
+  }
+
+  if (isSharedPortfolio) {
+    return (
+      <PublicPortfolio
+        email={sharedMeta?.email || ''}
+        name={sharedMeta?.name || 'Siswa Omni Learn'}
+        records={records}
+        docs={docs}
+        onBack={() => {
+          window.history.replaceState({}, '', window.location.pathname);
+          window.location.reload();
+        }}
+      />
     );
   }
 
@@ -264,6 +307,7 @@ export default function AppClean() {
             records={records}
             docs={docs}
             onAddRecord={() => setShowRecordModal(true)}
+            onSharePortfolio={sharePortfolio}
             onNavigate={(nextView) => setView(nextView as View)}
           />
         )}
@@ -374,4 +418,13 @@ function createTransaction(
 async function makeDemoWallet(email: string): Promise<string> {
   const hash = await sha256(`${email}|omni-learn-demo-wallet`);
   return `0x${hash.replace('0x', '').slice(0, 40)}`;
+}
+
+function emailToName(email: string): string {
+  const localPart = email.split('@')[0] || 'siswa';
+  return localPart
+    .split(/[._-]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }

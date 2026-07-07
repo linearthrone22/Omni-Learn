@@ -141,8 +141,9 @@ export function AuthScreenClean({ onLogin }: Props) {
 
           <div className="seed-hint">
             <b>Akun demo siap pakai:</b><br />
-            Email <code>andini@sekolah.id</code> - Password <code>demo123</code><br />
-            Berisi data nilai, dokumen, dashboard, dan ledger contoh.
+            Siswa <code>andini@sekolah.id</code> - <code>demo123</code><br />
+            Orang tua <code>ortu@sekolah.id</code> - <code>demo123</code><br />
+            Sekolah <code>sekolah@sekolah.id</code> - <code>demo123</code>
           </div>
           <div className="auth-foot">Cygnus Team - IT Fair XIV Hackathon Prototype</div>
         </div>

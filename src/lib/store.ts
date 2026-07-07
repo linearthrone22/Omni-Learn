@@ -84,9 +84,30 @@ export async function seedFor(email: string, full: boolean) {
 
 export async function ensureSeedAccount() {
   const users = await getUsers();
-  if (!users['andini@sekolah.id']) {
-    users['andini@sekolah.id'] = { name: 'Andini Pratama', email: 'andini@sekolah.id', pass: 'demo123', role: 'siswa' };
+  const demoUsers: User[] = [
+    { name: 'Andini Pratama', email: 'andini@sekolah.id', pass: 'demo123', role: 'siswa' },
+    { name: 'Budi Pratama', email: 'ortu@sekolah.id', pass: 'demo123', role: 'ortu', linkedStudentEmail: 'andini@sekolah.id' },
+    { name: 'SMA Negeri 1 Jakarta', email: 'sekolah@sekolah.id', pass: 'demo123', role: 'admin', linkedStudentEmail: 'andini@sekolah.id', organization: 'SMA Negeri 1 Jakarta' },
+  ];
+
+  let changed = false;
+  for (const demoUser of demoUsers) {
+    if (!users[demoUser.email]) {
+      users[demoUser.email] = demoUser;
+      changed = true;
+    } else {
+      users[demoUser.email] = { ...users[demoUser.email], ...demoUser };
+      changed = true;
+    }
+  }
+
+  if (changed) {
     await store.set('users', users);
+  }
+
+  const studentRecords = await getRecords('andini@sekolah.id');
+  const studentDocs = await getDocs('andini@sekolah.id');
+  if (!studentRecords.length || !studentDocs.length) {
     await seedFor('andini@sekolah.id', true);
   }
 }

@@ -5,6 +5,8 @@ export interface User {
   email: string;
   pass: string;
   role: Role;
+  linkedStudentEmail?: string;
+  organization?: string;
 }
 
 export interface AcademicRecord {

@@ -5,6 +5,7 @@ import {
   getChainTransactions,
   getDocs,
   getRecords,
+  getUsers,
   getWallet,
   saveChainTransactions,
   saveWallet,
@@ -72,8 +73,11 @@ export default function AppClean() {
   };
 
   const loadData = async (currentUser: User) => {
-    const loadedRecords = (await getRecords(currentUser.email)).map(normalizeRecord);
-    const loadedDocs = (await getDocs(currentUser.email)).map(normalizeDoc);
+    const ownerEmail = getDataOwnerEmail(currentUser);
+    const users = await getUsers();
+    const ownerUser = users[ownerEmail] || currentUser;
+    const loadedRecords = (await getRecords(ownerEmail)).map(normalizeRecord);
+    const loadedDocs = (await getDocs(ownerEmail)).map(normalizeDoc);
     const loadedTxs = await getChainTransactions();
     const storedWallet = await getWallet(currentUser.email);
     const migrationWallet = storedWallet || await makeDemoWallet(currentUser.email);
@@ -82,7 +86,7 @@ export default function AppClean() {
       records: loadedRecords,
       docs: loadedDocs,
       txs: loadedTxs,
-      user: currentUser,
+      user: ownerUser,
       wallet: migrationWallet,
     });
 
@@ -90,25 +94,27 @@ export default function AppClean() {
     setDocs(nextDocs);
     setTxs(nextTxs);
     setWallet(storedWallet);
-    await store.set('records_' + currentUser.email, nextRecords);
-    await store.set('docs_' + currentUser.email, nextDocs);
+    await store.set('records_' + ownerEmail, nextRecords);
+    await store.set('docs_' + ownerEmail, nextDocs);
     await saveChainTransactions(nextTxs);
   };
 
   const handleSaveRecord = async (newRecord: { id: string; subject: string; semester: string; grade: number; note: string; hash: string }) => {
     if (!user) return;
+    const ownerEmail = getDataOwnerEmail(user);
     const nextRecords: AcademicRecord[] = [...records, { ...newRecord, ts: Date.now(), onchain: false }];
     setRecords(nextRecords);
-    await store.set('records_' + user.email, nextRecords);
+    await store.set('records_' + ownerEmail, nextRecords);
     setShowRecordModal(false);
     showToast('Nilai tersimpan dan sidik jari dibuat.');
   };
 
   const handleSaveDoc = async (doc: DocumentRecord) => {
     if (!user) return;
+    const ownerEmail = getDataOwnerEmail(user);
     const nextDocs = [...docs, doc];
     setDocs(nextDocs);
-    await store.set('docs_' + user.email, nextDocs);
+    await store.set('docs_' + ownerEmail, nextDocs);
     setShowDocModal(false);
     setView('documents');
     showToast('Dokumen ditambahkan ke portofolio.');
@@ -144,12 +150,14 @@ export default function AppClean() {
     if (!target || target.onchain) return;
     const nextWallet = wallet || await connectWallet();
     if (!nextWallet) return;
-    const tx = createTransaction('record', target.id || target.hash, `${target.subject} - ${target.semester}`, target.hash, user, nextWallet, txs.length);
+    const ownerEmail = getDataOwnerEmail(user);
+    const ownerUser = await resolveDataOwner(user);
+    const tx = createTransaction('record', target.id || target.hash, `${target.subject} - ${target.semester}`, target.hash, ownerUser, nextWallet, txs.length);
     const nextRecords = records.map((record) => record.id === id || record.hash === id ? { ...record, onchain: true, txId: tx.id, verifiedAt: tx.ts } : record);
     const nextTxs = [tx, ...txs];
     setRecords(nextRecords);
     setTxs(nextTxs);
-    await store.set('records_' + user.email, nextRecords);
+    await store.set('records_' + ownerEmail, nextRecords);
     await saveChainTransactions(nextTxs);
     showToast('Nilai berhasil dimint ke ledger simulasi.');
   };
@@ -160,12 +168,14 @@ export default function AppClean() {
     if (!target || target.onchain) return;
     const nextWallet = wallet || await connectWallet();
     if (!nextWallet) return;
-    const tx = createTransaction('document', target.id || target.hash, target.title, target.hash, user, nextWallet, txs.length);
+    const ownerEmail = getDataOwnerEmail(user);
+    const ownerUser = await resolveDataOwner(user);
+    const tx = createTransaction('document', target.id || target.hash, target.title, target.hash, ownerUser, nextWallet, txs.length);
     const nextDocs = docs.map((doc) => doc.id === id || doc.hash === id ? { ...doc, onchain: true, txId: tx.id, verifiedAt: tx.ts } : doc);
     const nextTxs = [tx, ...txs];
     setDocs(nextDocs);
     setTxs(nextTxs);
-    await store.set('docs_' + user.email, nextDocs);
+    await store.set('docs_' + ownerEmail, nextDocs);
     await saveChainTransactions(nextTxs);
     showToast('Dokumen berhasil dimint ke ledger simulasi.');
   };
@@ -175,16 +185,18 @@ export default function AppClean() {
     const nextWallet = wallet || await connectWallet();
     if (!nextWallet) return;
 
+    const ownerEmail = getDataOwnerEmail(user);
+    const ownerUser = await resolveDataOwner(user);
     const created: ChainTransaction[] = [];
     const nextRecords = records.map((record) => {
       if (record.onchain) return record;
-      const tx = createTransaction('record', record.id || record.hash, `${record.subject} - ${record.semester}`, record.hash, user, nextWallet, txs.length + created.length);
+      const tx = createTransaction('record', record.id || record.hash, `${record.subject} - ${record.semester}`, record.hash, ownerUser, nextWallet, txs.length + created.length);
       created.push(tx);
       return { ...record, onchain: true, txId: tx.id, verifiedAt: tx.ts };
     });
     const nextDocs = docs.map((doc) => {
       if (doc.onchain) return doc;
-      const tx = createTransaction('document', doc.id || doc.hash, doc.title, doc.hash, user, nextWallet, txs.length + created.length);
+      const tx = createTransaction('document', doc.id || doc.hash, doc.title, doc.hash, ownerUser, nextWallet, txs.length + created.length);
       created.push(tx);
       return { ...doc, onchain: true, txId: tx.id, verifiedAt: tx.ts };
     });
@@ -198,8 +210,8 @@ export default function AppClean() {
     setRecords(nextRecords);
     setDocs(nextDocs);
     setTxs(nextTxs);
-    await store.set('records_' + user.email, nextRecords);
-    await store.set('docs_' + user.email, nextDocs);
+    await store.set('records_' + ownerEmail, nextRecords);
+    await store.set('docs_' + ownerEmail, nextDocs);
     await saveChainTransactions(nextTxs);
     showToast(`${created.length} item berhasil dimint ke ledger.`);
   };
@@ -216,8 +228,10 @@ export default function AppClean() {
 
   const exportPortfolio = () => {
     if (!user) return;
+    const ownerName = getProofOwner(user).name;
+    const ownerEmail = getDataOwnerEmail(user);
     const html = buildPortfolioHtml({
-      owner: { name: user.name, email: user.email, role: user.role },
+      owner: { name: ownerName, email: ownerEmail, role: 'siswa' },
       records,
       docs,
       generatedAt: Date.now(),
@@ -243,7 +257,7 @@ export default function AppClean() {
 
   const sharePortfolio = async () => {
     if (!user) return;
-    const url = `${window.location.origin}${window.location.pathname}?share=${encodeURIComponent(user.email)}`;
+    const url = `${window.location.origin}${window.location.pathname}?share=${encodeURIComponent(getDataOwnerEmail(user))}`;
     try {
       await navigator.clipboard.writeText(url);
       showToast('Link portofolio publik disalin.');
@@ -303,7 +317,7 @@ export default function AppClean() {
       <main className="main">
         {view === 'dashboard' && (
           <DashboardClean
-            user={user}
+            user={getProofOwner(user)}
             records={records}
             docs={docs}
             onAddRecord={() => setShowRecordModal(true)}
@@ -419,6 +433,27 @@ function createTransaction(
 async function makeDemoWallet(email: string): Promise<string> {
   const hash = await sha256(`${email}|omni-learn-demo-wallet`);
   return `0x${hash.replace('0x', '').slice(0, 40)}`;
+}
+
+function getDataOwnerEmail(user: User): string {
+  return user.linkedStudentEmail || user.email;
+}
+
+async function resolveDataOwner(user: User): Promise<User> {
+  const ownerEmail = getDataOwnerEmail(user);
+  if (ownerEmail === user.email) return user;
+  const users = await getUsers();
+  return users[ownerEmail] || { name: 'Andini Pratama', email: ownerEmail, pass: 'demo123', role: 'siswa' };
+}
+
+function getProofOwner(user: User): User {
+  if (!user.linkedStudentEmail) return user;
+  return {
+    name: 'Andini Pratama',
+    email: user.linkedStudentEmail,
+    pass: 'demo123',
+    role: 'siswa',
+  };
 }
 
 function emailToName(email: string): string {

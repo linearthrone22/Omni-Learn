@@ -16,6 +16,11 @@ Akun demo:
 - Email: `andini@sekolah.id`
 - Password: `demo123`
 
+Akun demo tambahan:
+
+- Orang Tua: `ortu@sekolah.id` / `demo123` - Budi Pratama, memantau data Andini.
+- Sekolah/Admin: `sekolah@sekolah.id` / `demo123` - SMA Negeri 1 Jakarta, mengelola data Andini.
+
 ## Fitur Final Prototype
 
 - Auth Register/Login untuk Siswa, Orang Tua, dan Admin Sekolah.

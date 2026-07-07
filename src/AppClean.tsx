@@ -356,7 +356,7 @@ export default function AppClean() {
         )}
         {view === 'chain' && (
           <ChainVerification
-            user={user}
+            user={getProofOwner(user)}
             records={records}
             docs={docs}
             txs={txs}
@@ -370,15 +370,15 @@ export default function AppClean() {
           />
         )}
         {view === 'ai' && (
-          <AIAssistant user={user} records={records} docs={docs} />
+          <AIAssistant user={getProofOwner(user)} records={records} docs={docs} />
         )}
       </main>
 
       {showRecordModal && (
-        <AddRecordModalClean user={user} onClose={() => setShowRecordModal(false)} onSave={handleSaveRecord} />
+        <AddRecordModalClean user={getProofOwner(user)} onClose={() => setShowRecordModal(false)} onSave={handleSaveRecord} />
       )}
       {showDocModal && (
-        <AddDocumentModal user={user} onClose={() => setShowDocModal(false)} onSave={handleSaveDoc} />
+        <AddDocumentModal user={getProofOwner(user)} onClose={() => setShowDocModal(false)} onSave={handleSaveDoc} />
       )}
       {toastMsg && <ToastClean message={toastMsg} />}
     </div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AcademicRecord, ChainEntity, ChainTransaction, DocumentRecord, User } from './types';
+import { AcademicRecord, ChainEntity, ChainTransaction, DocumentRecord, StudentSnapshot, User } from './types';
 import {
   ensureSeedAccount,
   getChainTransactions,
@@ -34,6 +34,9 @@ export default function AppClean() {
   const [records, setRecords] = useState<AcademicRecord[]>([]);
   const [docs, setDocs] = useState<DocumentRecord[]>([]);
   const [txs, setTxs] = useState<ChainTransaction[]>([]);
+  const [studentOptions, setStudentOptions] = useState<User[]>([]);
+  const [selectedStudentEmail, setSelectedStudentEmail] = useState('');
+  const [schoolSnapshots, setSchoolSnapshots] = useState<StudentSnapshot[]>([]);
   const [wallet, setWallet] = useState<string | null>(null);
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [showDocModal, setShowDocModal] = useState(false);
@@ -63,7 +66,7 @@ export default function AppClean() {
 
   useEffect(() => {
     if (user) {
-      loadData(user);
+      initializeUserScope(user);
     }
   }, [user]);
 
@@ -72,8 +75,16 @@ export default function AppClean() {
     window.setTimeout(() => setToastMsg(''), 2600);
   };
 
-  const loadData = async (currentUser: User) => {
-    const ownerEmail = getDataOwnerEmail(currentUser);
+  const initializeUserScope = async (currentUser: User) => {
+    const users = await getUsers();
+    const options = getAccessibleStudents(currentUser, users);
+    const nextSelectedEmail = getNextSelectedStudentEmail(currentUser, options, selectedStudentEmail);
+    setStudentOptions(options);
+    setSelectedStudentEmail(nextSelectedEmail);
+    await loadData(currentUser, nextSelectedEmail, options);
+  };
+
+  const loadData = async (currentUser: User, ownerEmail = getDataOwnerEmail(currentUser), options = studentOptions) => {
     const users = await getUsers();
     const ownerUser = users[ownerEmail] || currentUser;
     const loadedRecords = (await getRecords(ownerEmail)).map(normalizeRecord);
@@ -97,6 +108,20 @@ export default function AppClean() {
     await store.set('records_' + ownerEmail, nextRecords);
     await store.set('docs_' + ownerEmail, nextDocs);
     await saveChainTransactions(nextTxs);
+    setSchoolSnapshots(await buildStudentSnapshots(options.length ? options : getAccessibleStudents(currentUser, users)));
+  };
+
+  const handleSelectStudent = async (email: string) => {
+    if (!user) return;
+    setSelectedStudentEmail(email);
+    await loadData(user, email);
+  };
+
+  const refreshSnapshots = async () => {
+    if (!user) return;
+    const users = await getUsers();
+    const options = studentOptions.length ? studentOptions : getAccessibleStudents(user, users);
+    setSchoolSnapshots(await buildStudentSnapshots(options));
   };
 
   const handleSaveRecord = async (newRecord: { id: string; subject: string; semester: string; grade: number; note: string; hash: string }) => {
@@ -106,10 +131,11 @@ export default function AppClean() {
       showToast('Hanya admin sekolah yang dapat menambahkan nilai.');
       return;
     }
-    const ownerEmail = getDataOwnerEmail(user);
+    const ownerEmail = getActiveDataOwnerEmail(user, selectedStudentEmail);
     const nextRecords: AcademicRecord[] = [...records, { ...newRecord, ts: Date.now(), onchain: false }];
     setRecords(nextRecords);
     await store.set('records_' + ownerEmail, nextRecords);
+    await refreshSnapshots();
     setShowRecordModal(false);
     showToast('Nilai tersimpan dan sidik jari dibuat.');
   };
@@ -121,10 +147,11 @@ export default function AppClean() {
       showToast('Hanya admin sekolah yang dapat menambahkan dokumen.');
       return;
     }
-    const ownerEmail = getDataOwnerEmail(user);
+    const ownerEmail = getActiveDataOwnerEmail(user, selectedStudentEmail);
     const nextDocs = [...docs, doc];
     setDocs(nextDocs);
     await store.set('docs_' + ownerEmail, nextDocs);
+    await refreshSnapshots();
     setShowDocModal(false);
     setView('documents');
     showToast('Dokumen ditambahkan ke portofolio.');
@@ -164,8 +191,8 @@ export default function AppClean() {
     if (!target || target.onchain) return;
     const nextWallet = wallet || await connectWallet();
     if (!nextWallet) return;
-    const ownerEmail = getDataOwnerEmail(user);
-    const ownerUser = await resolveDataOwner(user);
+    const ownerEmail = getActiveDataOwnerEmail(user, selectedStudentEmail);
+    const ownerUser = await resolveDataOwner(user, ownerEmail);
     const tx = createTransaction('record', target.id || target.hash, `${target.subject} - ${target.semester}`, target.hash, ownerUser, nextWallet, txs.length);
     const nextRecords = records.map((record) => record.id === id || record.hash === id ? { ...record, onchain: true, txId: tx.id, verifiedAt: tx.ts } : record);
     const nextTxs = [tx, ...txs];
@@ -173,6 +200,7 @@ export default function AppClean() {
     setTxs(nextTxs);
     await store.set('records_' + ownerEmail, nextRecords);
     await saveChainTransactions(nextTxs);
+    await refreshSnapshots();
     showToast('Nilai berhasil dimint ke ledger simulasi.');
   };
 
@@ -186,8 +214,8 @@ export default function AppClean() {
     if (!target || target.onchain) return;
     const nextWallet = wallet || await connectWallet();
     if (!nextWallet) return;
-    const ownerEmail = getDataOwnerEmail(user);
-    const ownerUser = await resolveDataOwner(user);
+    const ownerEmail = getActiveDataOwnerEmail(user, selectedStudentEmail);
+    const ownerUser = await resolveDataOwner(user, ownerEmail);
     const tx = createTransaction('document', target.id || target.hash, target.title, target.hash, ownerUser, nextWallet, txs.length);
     const nextDocs = docs.map((doc) => doc.id === id || doc.hash === id ? { ...doc, onchain: true, txId: tx.id, verifiedAt: tx.ts } : doc);
     const nextTxs = [tx, ...txs];
@@ -195,6 +223,7 @@ export default function AppClean() {
     setTxs(nextTxs);
     await store.set('docs_' + ownerEmail, nextDocs);
     await saveChainTransactions(nextTxs);
+    await refreshSnapshots();
     showToast('Dokumen berhasil dimint ke ledger simulasi.');
   };
 
@@ -207,8 +236,8 @@ export default function AppClean() {
     const nextWallet = wallet || await connectWallet();
     if (!nextWallet) return;
 
-    const ownerEmail = getDataOwnerEmail(user);
-    const ownerUser = await resolveDataOwner(user);
+    const ownerEmail = getActiveDataOwnerEmail(user, selectedStudentEmail);
+    const ownerUser = await resolveDataOwner(user, ownerEmail);
     const created: ChainTransaction[] = [];
     const nextRecords = records.map((record) => {
       if (record.onchain) return record;
@@ -235,6 +264,7 @@ export default function AppClean() {
     await store.set('records_' + ownerEmail, nextRecords);
     await store.set('docs_' + ownerEmail, nextDocs);
     await saveChainTransactions(nextTxs);
+    await refreshSnapshots();
     showToast(`${created.length} item berhasil dimint ke ledger.`);
   };
 
@@ -250,8 +280,9 @@ export default function AppClean() {
 
   const exportPortfolio = () => {
     if (!user) return;
-    const ownerName = getProofOwner(user).name;
-    const ownerEmail = getDataOwnerEmail(user);
+    const activeStudent = getActiveStudent(user, studentOptions, selectedStudentEmail);
+    const ownerName = activeStudent.name;
+    const ownerEmail = activeStudent.email;
     const html = buildPortfolioHtml({
       owner: { name: ownerName, email: ownerEmail, role: 'siswa' },
       records,
@@ -279,7 +310,7 @@ export default function AppClean() {
 
   const sharePortfolio = async () => {
     if (!user) return;
-    const url = `${window.location.origin}${window.location.pathname}?share=${encodeURIComponent(getDataOwnerEmail(user))}`;
+    const url = `${window.location.origin}${window.location.pathname}?share=${encodeURIComponent(getActiveDataOwnerEmail(user, selectedStudentEmail))}`;
     try {
       await navigator.clipboard.writeText(url);
       showToast('Link portofolio publik disalin.');
@@ -322,6 +353,9 @@ export default function AppClean() {
     return <AuthScreenClean onLogin={(nextUser) => { setUser(nextUser); setView('dashboard'); }} />;
   }
 
+  const activeStudent = getActiveStudent(user, studentOptions, selectedStudentEmail);
+  const canManage = canManageRecords(user);
+
   return (
     <div id="app" style={{ display: 'grid' }}>
       <AppSidebar
@@ -340,23 +374,28 @@ export default function AppClean() {
         {view === 'dashboard' && (
           <DashboardClean
             user={user}
+            activeStudent={activeStudent}
+            studentOptions={studentOptions}
+            selectedStudentEmail={activeStudent.email}
+            onSelectStudent={handleSelectStudent}
+            schoolSnapshots={schoolSnapshots}
             records={records}
             docs={docs}
             onAddRecord={() => setShowRecordModal(true)}
             onSharePortfolio={sharePortfolio}
             onNavigate={(nextView) => setView(nextView as View)}
-            canManage={canManageRecords(user)}
+            canManage={canManage}
           />
         )}
         {view === 'records' && (
-          <RecordsClean records={records} onAddRecord={() => setShowRecordModal(true)} onMintRecord={mintRecord} canManage={canManageRecords(user)} />
+          <RecordsClean records={records} onAddRecord={() => setShowRecordModal(true)} onMintRecord={mintRecord} canManage={canManage} />
         )}
         {view === 'documents' && (
-          <DocumentsClean docs={docs} onAddDoc={() => setShowDocModal(true)} onMintDoc={mintDoc} onExportPortfolio={exportPortfolio} canManage={canManageRecords(user)} />
+          <DocumentsClean docs={docs} onAddDoc={() => setShowDocModal(true)} onMintDoc={mintDoc} onExportPortfolio={exportPortfolio} canManage={canManage} />
         )}
         {view === 'chain' && (
           <ChainVerification
-            user={getProofOwner(user)}
+            user={activeStudent}
             records={records}
             docs={docs}
             txs={txs}
@@ -366,19 +405,19 @@ export default function AppClean() {
             onMintDoc={mintDoc}
             onMintAll={mintAll}
             onCopyLink={copyProofLink}
-            canManage={canManageRecords(user)}
+            canManage={canManage}
           />
         )}
         {view === 'ai' && (
-          <AIAssistant user={getProofOwner(user)} records={records} docs={docs} />
+          <AIAssistant user={activeStudent} records={records} docs={docs} />
         )}
       </main>
 
       {showRecordModal && (
-        <AddRecordModalClean user={getProofOwner(user)} onClose={() => setShowRecordModal(false)} onSave={handleSaveRecord} />
+        <AddRecordModalClean user={activeStudent} onClose={() => setShowRecordModal(false)} onSave={handleSaveRecord} />
       )}
       {showDocModal && (
-        <AddDocumentModal user={getProofOwner(user)} onClose={() => setShowDocModal(false)} onSave={handleSaveDoc} />
+        <AddDocumentModal user={activeStudent} onClose={() => setShowDocModal(false)} onSave={handleSaveDoc} />
       )}
       {toastMsg && <ToastClean message={toastMsg} />}
     </div>
@@ -463,25 +502,55 @@ function getDataOwnerEmail(user: User): string {
   return user.linkedStudentEmail || user.email;
 }
 
+function getActiveDataOwnerEmail(user: User, selectedStudentEmail: string): string {
+  if (selectedStudentEmail) return selectedStudentEmail;
+  return getDataOwnerEmail(user);
+}
+
 function canManageRecords(user: User): boolean {
   return user.role === 'admin';
 }
 
-async function resolveDataOwner(user: User): Promise<User> {
-  const ownerEmail = getDataOwnerEmail(user);
+async function resolveDataOwner(user: User, ownerEmail = getDataOwnerEmail(user)): Promise<User> {
   if (ownerEmail === user.email) return user;
   const users = await getUsers();
   return users[ownerEmail] || { name: 'Andini Pratama', email: ownerEmail, pass: 'demo123', role: 'siswa' };
 }
 
-function getProofOwner(user: User): User {
-  if (!user.linkedStudentEmail) return user;
-  return {
-    name: 'Andini Pratama',
-    email: user.linkedStudentEmail,
-    pass: 'demo123',
-    role: 'siswa',
-  };
+function getAccessibleStudents(user: User, users: Record<string, User>): User[] {
+  const students = Object.values(users)
+    .filter((candidate) => candidate.role === 'siswa')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  if (user.role === 'admin') return students;
+  if (user.role === 'ortu') {
+    const linkedEmails = user.linkedStudentEmails?.length
+      ? user.linkedStudentEmails
+      : user.linkedStudentEmail
+        ? [user.linkedStudentEmail]
+        : [];
+    return linkedEmails.map((email) => users[email]).filter(Boolean);
+  }
+  return [users[user.email] || user];
+}
+
+function getNextSelectedStudentEmail(user: User, options: User[], currentEmail: string): string {
+  if (currentEmail && options.some((student) => student.email === currentEmail)) return currentEmail;
+  return options[0]?.email || getDataOwnerEmail(user);
+}
+
+function getActiveStudent(user: User, options: User[], selectedStudentEmail: string): User {
+  return options.find((student) => student.email === selectedStudentEmail)
+    || options[0]
+    || { name: user.name, email: getDataOwnerEmail(user), pass: user.pass, role: 'siswa' };
+}
+
+async function buildStudentSnapshots(students: User[]): Promise<StudentSnapshot[]> {
+  return Promise.all(students.map(async (student) => ({
+    user: student,
+    records: (await getRecords(student.email)).map(normalizeRecord),
+    docs: (await getDocs(student.email)).map(normalizeDoc),
+  })));
 }
 
 function emailToName(email: string): string {

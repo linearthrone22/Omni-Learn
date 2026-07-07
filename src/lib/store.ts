@@ -82,12 +82,81 @@ export async function seedFor(email: string, full: boolean) {
   ]);
 }
 
+async function seedFullDemoStudent(email: string) {
+  const subjectProfiles: Record<string, [string, number[]][]> = {
+    'andini@sekolah.id': [
+      ['Matematika', [78, 82, 85, 88]],
+      ['Bahasa Indonesia', [85, 84, 88, 90]],
+      ['IPA', [72, 75, 80, 86]],
+      ['Bahasa Inggris', [80, 83, 82, 89]],
+    ],
+    'raka@sekolah.id': [
+      ['Matematika', [88, 90, 92, 94]],
+      ['Bahasa Indonesia', [76, 79, 80, 82]],
+      ['IPA', [84, 86, 89, 91]],
+      ['Bahasa Inggris', [72, 74, 78, 81]],
+    ],
+    'salsabila@sekolah.id': [
+      ['Matematika', [70, 74, 78, 83]],
+      ['Bahasa Indonesia', [89, 91, 92, 94]],
+      ['IPA', [78, 80, 82, 85]],
+      ['Bahasa Inggris', [86, 88, 90, 93]],
+    ],
+  };
+
+  const records: AcademicRecord[] = [];
+  for (const [subject, grades] of subjectProfiles[email] || subjectProfiles['andini@sekolah.id']) {
+    grades.forEach((grade, index) => {
+      records.push({
+        id: `${email}-record-${subject}-${index + 1}`,
+        subject,
+        semester: 'Semester ' + (index + 1),
+        grade,
+        note: index >= 2 ? 'Tren belajar meningkat dan konsisten.' : '',
+        ts: Date.now() - (10 - index) * 86400000 - Math.random() * 5000000,
+        hash: '0x' + Math.random().toString(16).slice(2, 18) + Math.random().toString(16).slice(2, 18),
+        onchain: index < 3,
+      });
+    });
+  }
+
+  const docProfiles: Record<string, DocumentRecord[]> = {
+    'andini@sekolah.id': [
+      { id: 'andini-doc-1', title: 'Juara 2 Olimpiade Matematika', type: 'Sertifikat', sem: 'Semester 3', hash: '0x' + Math.random().toString(16).slice(2, 14), onchain: true, icon: 'award' },
+      { id: 'andini-doc-2', title: 'Rapor Semester 3', type: 'Rapor', sem: 'Semester 3', hash: '0x' + Math.random().toString(16).slice(2, 14), onchain: true, icon: 'file' },
+      { id: 'andini-doc-3', title: 'Sertifikat Lomba Coding', type: 'Sertifikat', sem: 'Semester 4', hash: '0x' + Math.random().toString(16).slice(2, 14), onchain: false, icon: 'code' },
+    ],
+    'raka@sekolah.id': [
+      { id: 'raka-doc-1', title: 'Finalis Kompetisi Robotik Jakarta', type: 'Sertifikat', sem: 'Semester 4', hash: '0x' + Math.random().toString(16).slice(2, 14), onchain: true, icon: 'code' },
+      { id: 'raka-doc-2', title: 'Rapor Semester 4', type: 'Rapor', sem: 'Semester 4', hash: '0x' + Math.random().toString(16).slice(2, 14), onchain: true, icon: 'file' },
+      { id: 'raka-doc-3', title: 'Ketua Tim Eksperimen Sains', type: 'Penghargaan', sem: 'Semester 3', hash: '0x' + Math.random().toString(16).slice(2, 14), onchain: false, icon: 'award' },
+    ],
+    'salsabila@sekolah.id': [
+      { id: 'salsa-doc-1', title: 'Juara 1 Debat Bahasa Inggris', type: 'Sertifikat', sem: 'Semester 4', hash: '0x' + Math.random().toString(16).slice(2, 14), onchain: true, icon: 'award' },
+      { id: 'salsa-doc-2', title: 'Rapor Semester 4', type: 'Rapor', sem: 'Semester 4', hash: '0x' + Math.random().toString(16).slice(2, 14), onchain: true, icon: 'file' },
+      { id: 'salsa-doc-3', title: 'Portofolio Karya Tulis Ilmiah', type: 'Portofolio', sem: 'Semester 3', hash: '0x' + Math.random().toString(16).slice(2, 14), onchain: false, icon: 'file' },
+    ],
+  };
+
+  await store.set('records_' + email, records);
+  await store.set('docs_' + email, docProfiles[email] || docProfiles['andini@sekolah.id']);
+}
+
 export async function ensureSeedAccount() {
   const users = await getUsers();
   const demoUsers: User[] = [
-    { name: 'Andini Pratama', email: 'andini@sekolah.id', pass: 'demo123', role: 'siswa' },
-    { name: 'Budi Pratama', email: 'ortu@sekolah.id', pass: 'demo123', role: 'ortu', linkedStudentEmail: 'andini@sekolah.id' },
-    { name: 'SMA Negeri 1 Jakarta', email: 'sekolah@sekolah.id', pass: 'demo123', role: 'admin', linkedStudentEmail: 'andini@sekolah.id', organization: 'SMA Negeri 1 Jakarta' },
+    { name: 'Andini Pratama', email: 'andini@sekolah.id', pass: 'demo123', role: 'siswa', className: 'XI IPA 1' },
+    { name: 'Raka Santoso', email: 'raka@sekolah.id', pass: 'demo123', role: 'siswa', className: 'XI IPA 1' },
+    { name: 'Salsabila Putri', email: 'salsabila@sekolah.id', pass: 'demo123', role: 'siswa', className: 'XI IPS 2' },
+    {
+      name: 'Budi Pratama',
+      email: 'ortu@sekolah.id',
+      pass: 'demo123',
+      role: 'ortu',
+      linkedStudentEmail: 'andini@sekolah.id',
+      linkedStudentEmails: ['andini@sekolah.id', 'raka@sekolah.id'],
+    },
+    { name: 'SMA Negeri 1 Jakarta', email: 'sekolah@sekolah.id', pass: 'demo123', role: 'admin', organization: 'SMA Negeri 1 Jakarta' },
   ];
 
   let changed = false;
@@ -105,9 +174,11 @@ export async function ensureSeedAccount() {
     await store.set('users', users);
   }
 
-  const studentRecords = await getRecords('andini@sekolah.id');
-  const studentDocs = await getDocs('andini@sekolah.id');
-  if (!studentRecords.length || !studentDocs.length) {
-    await seedFor('andini@sekolah.id', true);
+  for (const student of demoUsers.filter((demoUser) => demoUser.role === 'siswa')) {
+    const studentRecords = await getRecords(student.email);
+    const studentDocs = await getDocs(student.email);
+    if (!studentRecords.length || !studentDocs.length) {
+      await seedFullDemoStudent(student.email);
+    }
   }
 }

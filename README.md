@@ -13,18 +13,15 @@ Buka `http://localhost:3000`.
 
 Akun demo:
 
-- Email: `andini@sekolah.id`
-- Password: `demo123`
-
-Akun demo tambahan:
-
-- Orang Tua: `ortu@sekolah.id` / `demo123` - Budi Pratama, memantau data Andini.
-- Sekolah/Admin: `sekolah@sekolah.id` / `demo123` - SMA Negeri 1 Jakarta, mengelola data Andini.
+- Siswa: `andini@sekolah.id` / `demo123` - melihat progres pribadi, portofolio, QR proof, dan bantuan AI.
+- Orang Tua: `ortu@sekolah.id` / `demo123` - Budi Pratama, memilih dan memantau Andini atau Raka.
+- Sekolah/Admin: `sekolah@sekolah.id` / `demo123` - SMA Negeri 1 Jakarta, melihat aktivitas seluruh siswa dan mengelola validasi akademik.
 
 ## Fitur Final Prototype
 
 - Auth Register/Login untuk Siswa, Orang Tua, dan Admin Sekolah.
-- Dashboard dengan statistik nilai, tren semester, aktivitas terbaru, dan status verifikasi.
+- Dashboard siswa/orang tua dengan statistik nilai, tren semester, aktivitas terbaru, dan status verifikasi siswa terpilih.
+- Dashboard sekolah dengan overview prestasi, leaderboard akademik, aktivitas seluruh siswa, dan prioritas validasi ledger.
 - Rekam Nilai dengan hash SHA-256 untuk setiap catatan akademik.
 - Portofolio dokumen/prestasi dengan status pending atau on-chain.
 - Simulasi wallet dan mint hash ke ledger lokal.
@@ -85,10 +82,10 @@ Saat ini, aplikasi berjalan pada **Phase 1**, yakni prototipe fungsional antarmu
 4. **Alamat Aplikasi**: Buka browser yang diarahkan pada alamat localhost yang disajikan oleh *output* CLI Anda. (Utamanya di `http://localhost:3000`).
 
 > **💡 Tips Login Demo:**  
-> Untuk mengakses segera pengalaman siswa:
-> * **Email:** `andini@sekolah.id`
-> * **Password:** `demo123`  
-> *(Akun ini telah dilengkapi dengan nilai awal acak dan dokumen portofolio sebagai bukti konsep).*
+> * **Siswa:** `andini@sekolah.id` / `demo123`
+> * **Orang Tua:** `ortu@sekolah.id` / `demo123`
+> * **Sekolah/Admin:** `sekolah@sekolah.id` / `demo123`  
+> *(Akun demo sudah dilengkapi nilai awal, dokumen portofolio, dan data multi-siswa untuk simulasi sekolah).*
 
 ## 🗺️ Roadmap Pengembangan
 

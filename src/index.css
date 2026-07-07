@@ -282,6 +282,20 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .btn-secondary:hover { border-color: var(--chain); color: var(--chain); }
 .btn-add { border-radius: 8px; }
 .btn-primary { border-radius: 8px; }
+.student-select {
+  min-width: 250px; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 8px;
+  background: #fff; color: var(--ink-2); font-weight: 700; box-shadow: var(--shadow);
+}
+.student-focus {
+  display: grid; grid-template-columns: 1.1fr .7fr 1.2fr; gap: 12px; margin: -8px 0 24px;
+}
+.student-focus > div {
+  background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 13px 15px; box-shadow: var(--shadow);
+}
+.student-focus span, .school-stat-grid span, .school-pulse span {
+  display: block; color: var(--muted-2); font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em;
+}
+.student-focus strong { display: block; margin-top: 4px; color: var(--ink); word-break: break-word; }
 .quick-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: -8px 0 24px; }
 .quick-actions button {
   display: flex; align-items: center; gap: 9px; background: #fff; border: 1px solid var(--line); border-radius: 8px;
@@ -327,6 +341,53 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .plan-item { border: 1px solid var(--line); border-radius: 8px; padding: 11px 12px; }
 .plan-item b { display: block; color: var(--ink); margin-bottom: 3px; }
 .plan-item span { color: var(--muted); font-size: 13px; }
+
+.school-overview { margin-bottom: 24px; display: grid; gap: 16px; }
+.school-hero {
+  display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 20px; align-items: stretch;
+  background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 22px; box-shadow: var(--shadow);
+}
+.school-mark { display: flex; align-items: center; gap: 8px; color: var(--chain); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.school-hero h2 { font-family: var(--display); margin: 10px 0 6px; font-size: 24px; }
+.school-hero p { margin: 0; color: var(--muted); max-width: 720px; }
+.school-pulse { border-left: 1px solid var(--line); padding-left: 20px; display: flex; flex-direction: column; justify-content: center; }
+.school-pulse strong { font-family: var(--display); font-size: 42px; line-height: 1; margin: 7px 0; color: var(--amber); }
+.school-pulse small { color: var(--muted); font-size: 12px; }
+.school-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.school-stat-grid > div {
+  display: grid; gap: 6px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 15px; box-shadow: var(--shadow);
+}
+.school-stat-grid svg { color: var(--chain); }
+.school-stat-grid strong { font-family: var(--display); font-size: 25px; color: var(--ink); }
+.school-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+.school-panel .panel-head { padding-bottom: 12px; }
+.school-list { padding: 4px 14px 14px; display: grid; gap: 8px; }
+.school-row {
+  display: grid; grid-template-columns: 42px minmax(0, 1fr) 86px 58px; align-items: center; gap: 10px;
+  width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #fff; text-align: left;
+}
+.school-row.on { border-color: var(--chain); background: var(--chain-soft); }
+.school-row span { color: var(--muted-2); font-family: var(--mono); font-size: 11px; }
+.school-row b { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.school-row em { color: var(--muted); font-style: normal; font-size: 12px; }
+.school-row strong { color: var(--chain); font-family: var(--display); text-align: right; }
+.school-achievements { padding: 4px 16px 16px; display: grid; gap: 10px; }
+.school-achievements > div {
+  display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: #fff;
+}
+.school-achievements svg { color: var(--amber); flex-shrink: 0; margin-top: 1px; }
+.school-achievements b { display: block; color: var(--ink); font-size: 13px; }
+.school-achievements span { display: block; color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.school-activity-grid { padding: 4px 16px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.school-activity {
+  display: grid; grid-template-columns: minmax(0, 1fr) 62px 74px; grid-template-areas: "student grade status" "subject grade status";
+  align-items: center; gap: 4px 10px; border: 1px solid var(--line); border-radius: 8px; padding: 11px 12px; background: #fff; text-align: left;
+}
+.school-activity:hover { border-color: var(--chain); background: #FAFBFF; }
+.school-activity span { grid-area: student; color: var(--muted); font-size: 11.5px; }
+.school-activity b { grid-area: subject; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.school-activity em { grid-area: grade; justify-self: end; font-family: var(--display); font-style: normal; font-size: 21px; color: var(--chain); }
+.school-activity strong { grid-area: status; justify-self: end; font-size: 11px; color: var(--emerald); background: var(--emerald-soft); border-radius: 7px; padding: 4px 7px; }
 
 .chain-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
 .chain-summary > div { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 16px; box-shadow: var(--shadow); }
@@ -409,7 +470,10 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 @media(max-width: 920px) {
   .top-actions { width: 100%; }
   .top-actions .btn-secondary, .top-actions .btn-add { flex: 1; min-width: 150px; }
-  .quick-actions, .chain-summary, .stat-grid.compact, .ai-hero { grid-template-columns: 1fr; }
+  .quick-actions, .chain-summary, .stat-grid.compact, .ai-hero, .student-focus, .school-hero, .school-stat-grid, .school-grid { grid-template-columns: 1fr; }
+  .student-select { width: 100%; min-width: 0; }
+  .school-pulse { border-left: 0; border-top: 1px solid var(--line); padding: 16px 0 0; }
+  .school-activity-grid { grid-template-columns: 1fr; }
   .ai-score { border-left: 0; border-top: 1px solid var(--line); padding: 16px 0 0; }
   .proof-grid { grid-template-columns: 1fr; }
   .rec-table { min-width: 760px; }

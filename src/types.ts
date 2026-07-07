@@ -6,7 +6,9 @@ export interface User {
   pass: string;
   role: Role;
   linkedStudentEmail?: string;
+  linkedStudentEmails?: string[];
   organization?: string;
+  className?: string;
 }
 
 export interface AcademicRecord {
@@ -54,4 +56,10 @@ export interface PortfolioSnapshot {
   records: AcademicRecord[];
   docs: DocumentRecord[];
   generatedAt: number;
+}
+
+export interface StudentSnapshot {
+  user: User;
+  records: AcademicRecord[];
+  docs: DocumentRecord[];
 }

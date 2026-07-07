@@ -9,15 +9,16 @@ interface Props {
   onAddRecord: () => void;
   onSharePortfolio: () => void;
   onNavigate: (view: string) => void;
+  canManage: boolean;
 }
 
 const roleNotes = {
   siswa: 'Tampilan siswa - melihat progres, portofolio, dan rekomendasi belajar.',
-  ortu: 'Tampilan orang tua - memantau perkembangan dan bukti akademik anak.',
-  admin: 'Tampilan sekolah - mengelola catatan nilai dan dokumen siswa.',
+  ortu: 'Tampilan orang tua - memantau perkembangan Andini, bukti on-chain, dan rekomendasi AI.',
+  admin: 'Tampilan sekolah - mengelola nilai, dokumen, hash, dan validasi ledger Andini.',
 };
 
-export function DashboardClean({ user, records, docs, onAddRecord, onSharePortfolio, onNavigate }: Props) {
+export function DashboardClean({ user, records, docs, onAddRecord, onSharePortfolio, onNavigate, canManage }: Props) {
   const avg = records.length ? records.reduce((sum, record) => sum + record.grade, 0) / records.length : 0;
   const onchainRecords = records.filter((record) => record.onchain).length;
   const onchainDocs = docs.filter((doc) => doc.onchain).length;
@@ -39,7 +40,7 @@ export function DashboardClean({ user, records, docs, onAddRecord, onSharePortfo
           <div className="crumb">Ringkasan Akademik</div>
           <h1>Halo, {user.name.split(' ')[0]}</h1>
         </div>
-        <button className="btn-add" onClick={onAddRecord}><Plus size={16} /> Tambah Nilai</button>
+        {canManage && <button className="btn-add" onClick={onAddRecord}><Plus size={16} /> Tambah Nilai</button>}
       </div>
 
       <div className="role-note">{roleNotes[user.role]}</div>

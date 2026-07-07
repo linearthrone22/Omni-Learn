@@ -16,6 +16,7 @@ interface Props {
   onMintDoc: (id: string) => void;
   onMintAll: () => void;
   onCopyLink: (tx: ChainTransaction) => void;
+  canManage: boolean;
 }
 
 export function ChainVerification({
@@ -29,6 +30,7 @@ export function ChainVerification({
   onMintDoc,
   onMintAll,
   onCopyLink,
+  canManage,
 }: Props) {
   const [qrMap, setQrMap] = useState<Record<string, string>>({});
   const pendingRecords = records.filter((record) => !record.onchain);
@@ -104,14 +106,16 @@ export function ChainVerification({
           <div className="crumb">Web3 Verification</div>
           <h1>Verifikasi Chain</h1>
         </div>
-        <div className="top-actions">
-          <button className="btn-secondary" onClick={onConnectWallet}>
-            <Wallet size={16} /> {wallet ? shortWallet(wallet) : 'Connect Wallet'}
-          </button>
-          <button className="btn-add" onClick={onMintAll} disabled={!pendingRecords.length && !pendingDocs.length}>
-            <ShieldCheck size={16} /> Mint Pending
-          </button>
-        </div>
+        {canManage && (
+          <div className="top-actions">
+            <button className="btn-secondary" onClick={onConnectWallet}>
+              <Wallet size={16} /> {wallet ? shortWallet(wallet) : 'Connect Wallet'}
+            </button>
+            <button className="btn-add" onClick={onMintAll} disabled={!pendingRecords.length && !pendingDocs.length}>
+              <ShieldCheck size={16} /> Mint Pending
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="chain-summary">
@@ -121,9 +125,9 @@ export function ChainVerification({
           <small>catatan dan dokumen terverifikasi</small>
         </div>
         <div>
-          <span>Wallet demo</span>
-          <strong>{wallet ? shortWallet(wallet) : 'Belum terhubung'}</strong>
-          <small>{wallet ? 'Siap menandatangani transaksi simulasi' : 'Hubungkan wallet untuk mint'}</small>
+          <span>{canManage ? 'Wallet demo' : 'Mode akses'}</span>
+          <strong>{canManage ? (wallet ? shortWallet(wallet) : 'Belum terhubung') : 'Read-only'}</strong>
+          <small>{canManage ? (wallet ? 'Siap menandatangani transaksi simulasi' : 'Hubungkan wallet untuk mint') : 'Melihat bukti tanpa mengubah ledger'}</small>
         </div>
         <div>
           <span>Public proof</span>
@@ -133,7 +137,8 @@ export function ChainVerification({
       </div>
 
       <div className="grid-2">
-        <div className="panel">
+        {canManage && (
+          <div className="panel">
           <div className="panel-head">
             <div>
               <h3>Mint ke Ledger Simulasi</h3>
@@ -166,7 +171,8 @@ export function ChainVerification({
               )}
             </div>
           </div>
-        </div>
+          </div>
+        )}
 
         <div className="panel">
           <div className="panel-head">

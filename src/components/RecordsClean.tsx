@@ -6,9 +6,10 @@ interface Props {
   records: AcademicRecord[];
   onAddRecord: () => void;
   onMintRecord: (id: string) => void;
+  canManage: boolean;
 }
 
-export function RecordsClean({ records, onAddRecord, onMintRecord }: Props) {
+export function RecordsClean({ records, onAddRecord, onMintRecord, canManage }: Props) {
   const sorted = [...records].sort((a, b) => b.ts - a.ts);
   const gradeClass = (grade: number) => grade >= 85 ? 'g-a' : grade >= 75 ? 'g-b' : grade >= 65 ? 'g-c' : 'g-d';
 
@@ -19,7 +20,7 @@ export function RecordsClean({ records, onAddRecord, onMintRecord }: Props) {
           <div className="crumb">Rekam Jejak</div>
           <h1>Rekam Nilai</h1>
         </div>
-        <button className="btn-add" onClick={onAddRecord}><Plus size={16} /> Tambah Nilai</button>
+        {canManage && <button className="btn-add" onClick={onAddRecord}><Plus size={16} /> Tambah Nilai</button>}
       </div>
       <div className="panel">
         <div className="panel-head">
@@ -38,7 +39,7 @@ export function RecordsClean({ records, onAddRecord, onMintRecord }: Props) {
                   <th>Nilai</th>
                   <th>Sidik Jari</th>
                   <th>Status</th>
-                  <th>Aksi</th>
+                  {canManage && <th>Aksi</th>}
                 </tr>
               </thead>
               <tbody>
@@ -58,13 +59,15 @@ export function RecordsClean({ records, onAddRecord, onMintRecord }: Props) {
                         <span className="chain-tag">Pending mint</span>
                       )}
                     </td>
-                    <td>
-                      {!record.onchain && (
+                    {canManage && (
+                      <td>
+                        {!record.onchain && (
                         <button className="mini-btn" onClick={() => onMintRecord(record.id || record.hash)}>
                           Mint
                         </button>
-                      )}
-                    </td>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -73,7 +76,7 @@ export function RecordsClean({ records, onAddRecord, onMintRecord }: Props) {
             <div className="empty">
               <ShieldCheck size={38} />
               <h4>Belum ada catatan nilai</h4>
-              <p>Klik Tambah Nilai untuk mencatat nilai pertama.</p>
+              <p>{canManage ? 'Klik Tambah Nilai untuk mencatat nilai pertama.' : 'Belum ada nilai yang diterbitkan sekolah.'}</p>
             </div>
           )}
         </div>

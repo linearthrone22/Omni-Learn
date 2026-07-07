@@ -101,6 +101,11 @@ export default function AppClean() {
 
   const handleSaveRecord = async (newRecord: { id: string; subject: string; semester: string; grade: number; note: string; hash: string }) => {
     if (!user) return;
+    if (!canManageRecords(user)) {
+      setShowRecordModal(false);
+      showToast('Hanya admin sekolah yang dapat menambahkan nilai.');
+      return;
+    }
     const ownerEmail = getDataOwnerEmail(user);
     const nextRecords: AcademicRecord[] = [...records, { ...newRecord, ts: Date.now(), onchain: false }];
     setRecords(nextRecords);
@@ -111,6 +116,11 @@ export default function AppClean() {
 
   const handleSaveDoc = async (doc: DocumentRecord) => {
     if (!user) return;
+    if (!canManageRecords(user)) {
+      setShowDocModal(false);
+      showToast('Hanya admin sekolah yang dapat menambahkan dokumen.');
+      return;
+    }
     const ownerEmail = getDataOwnerEmail(user);
     const nextDocs = [...docs, doc];
     setDocs(nextDocs);
@@ -146,6 +156,10 @@ export default function AppClean() {
 
   const mintRecord = async (id: string) => {
     if (!user) return;
+    if (!canManageRecords(user)) {
+      showToast('Hanya admin sekolah yang dapat memvalidasi nilai ke ledger.');
+      return;
+    }
     const target = records.find((record) => record.id === id || record.hash === id);
     if (!target || target.onchain) return;
     const nextWallet = wallet || await connectWallet();
@@ -164,6 +178,10 @@ export default function AppClean() {
 
   const mintDoc = async (id: string) => {
     if (!user) return;
+    if (!canManageRecords(user)) {
+      showToast('Hanya admin sekolah yang dapat memvalidasi dokumen ke ledger.');
+      return;
+    }
     const target = docs.find((doc) => doc.id === id || doc.hash === id);
     if (!target || target.onchain) return;
     const nextWallet = wallet || await connectWallet();
@@ -182,6 +200,10 @@ export default function AppClean() {
 
   const mintAll = async () => {
     if (!user) return;
+    if (!canManageRecords(user)) {
+      showToast('Hanya admin sekolah yang dapat melakukan mint ke ledger.');
+      return;
+    }
     const nextWallet = wallet || await connectWallet();
     if (!nextWallet) return;
 
@@ -317,19 +339,20 @@ export default function AppClean() {
       <main className="main">
         {view === 'dashboard' && (
           <DashboardClean
-            user={getProofOwner(user)}
+            user={user}
             records={records}
             docs={docs}
             onAddRecord={() => setShowRecordModal(true)}
             onSharePortfolio={sharePortfolio}
             onNavigate={(nextView) => setView(nextView as View)}
+            canManage={canManageRecords(user)}
           />
         )}
         {view === 'records' && (
-          <RecordsClean records={records} onAddRecord={() => setShowRecordModal(true)} onMintRecord={mintRecord} />
+          <RecordsClean records={records} onAddRecord={() => setShowRecordModal(true)} onMintRecord={mintRecord} canManage={canManageRecords(user)} />
         )}
         {view === 'documents' && (
-          <DocumentsClean docs={docs} onAddDoc={() => setShowDocModal(true)} onMintDoc={mintDoc} onExportPortfolio={exportPortfolio} />
+          <DocumentsClean docs={docs} onAddDoc={() => setShowDocModal(true)} onMintDoc={mintDoc} onExportPortfolio={exportPortfolio} canManage={canManageRecords(user)} />
         )}
         {view === 'chain' && (
           <ChainVerification
@@ -343,6 +366,7 @@ export default function AppClean() {
             onMintDoc={mintDoc}
             onMintAll={mintAll}
             onCopyLink={copyProofLink}
+            canManage={canManageRecords(user)}
           />
         )}
         {view === 'ai' && (
@@ -437,6 +461,10 @@ async function makeDemoWallet(email: string): Promise<string> {
 
 function getDataOwnerEmail(user: User): string {
   return user.linkedStudentEmail || user.email;
+}
+
+function canManageRecords(user: User): boolean {
+  return user.role === 'admin';
 }
 
 async function resolveDataOwner(user: User): Promise<User> {

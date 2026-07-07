@@ -7,9 +7,10 @@ interface Props {
   onAddDoc: () => void;
   onMintDoc: (id: string) => void;
   onExportPortfolio: () => void;
+  canManage: boolean;
 }
 
-export function DocumentsClean({ docs, onAddDoc, onMintDoc, onExportPortfolio }: Props) {
+export function DocumentsClean({ docs, onAddDoc, onMintDoc, onExportPortfolio, canManage }: Props) {
   return (
     <section className="view on">
       <div className="topbar">
@@ -19,7 +20,7 @@ export function DocumentsClean({ docs, onAddDoc, onMintDoc, onExportPortfolio }:
         </div>
         <div className="top-actions">
           <button className="btn-secondary" onClick={onExportPortfolio}><Download size={16} /> Export PDF</button>
-          <button className="btn-add" onClick={onAddDoc}><Plus size={16} /> Tambah Dokumen</button>
+          {canManage && <button className="btn-add" onClick={onAddDoc}><Plus size={16} /> Tambah Dokumen</button>}
         </div>
       </div>
       <div className="panel">
@@ -38,7 +39,7 @@ export function DocumentsClean({ docs, onAddDoc, onMintDoc, onExportPortfolio }:
                       <div className="dm-t">{doc.title}</div>
                       <div className="dm-s">{doc.type} - {doc.sem}</div>
                       <div className="dm-h">{doc.onchain ? shortHash(doc.hash) : 'belum dicetak ke ledger'}</div>
-                      {!doc.onchain && (
+                      {canManage && !doc.onchain && (
                         <button className="mini-btn full" onClick={() => onMintDoc(doc.id || doc.hash)}>
                           Mint dokumen
                         </button>
@@ -52,7 +53,7 @@ export function DocumentsClean({ docs, onAddDoc, onMintDoc, onExportPortfolio }:
             <div className="empty">
               <Award size={38} />
               <h4>Belum ada dokumen</h4>
-              <p>Tambahkan sertifikat atau rapor untuk membangun portofolio.</p>
+              <p>{canManage ? 'Tambahkan sertifikat atau rapor untuk membangun portofolio.' : 'Belum ada dokumen yang diterbitkan sekolah.'}</p>
             </div>
           )}
         </div>

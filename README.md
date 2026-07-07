@@ -24,8 +24,12 @@ Akun demo:
 - Portofolio dokumen/prestasi dengan status pending atau on-chain.
 - Simulasi wallet dan mint hash ke ledger lokal.
 - QR/link verifikasi publik dengan payload proof mandiri.
-- AI Learning Assistant lokal untuk membaca pola nilai dan membuat rekomendasi belajar.
+- AI Learning Assistant dengan endpoint server opsional (`/api/ai/analyze`) dan fallback analisis lokal.
 - Export portofolio ke halaman siap cetak atau simpan sebagai PDF.
+
+## AI Server Opsional
+
+Untuk menjalankan analisis Gemini melalui server lokal/Vercel, isi `GEMINI_API_KEY` di environment. Jika key tidak tersedia, UI tetap menampilkan rekomendasi lokal dari data nilai.
 
 ---
 

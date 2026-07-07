@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import QRCode from 'qrcode';
-import { CheckCircle2, Copy, Link2, QrCode, ShieldCheck, Wallet } from 'lucide-react';
+import { CheckCircle2, Copy, Link2, QrCode, Search, ShieldCheck, Wallet } from 'lucide-react';
 import { buildProofUrl } from '../lib/proof';
 import { shortHash } from '../lib/crypto';
 import { AcademicRecord, ChainTransaction, DocumentRecord } from '../types';
@@ -29,6 +29,15 @@ export function ChainVerification({
   onCopyLink,
 }: Props) {
   const [qrMap, setQrMap] = useState<Record<string, string>>({});
+  const [searchHash, setSearchHash] = useState('');
+  const [verificationResult, setVerificationResult] = useState<{
+    title: string;
+    type: string;
+    hash: string;
+    status: string;
+    onchain: boolean;
+  } | null>(null);
+  const [verificationError, setVerificationError] = useState('');
   const pendingRecords = records.filter((record) => !record.onchain);
   const pendingDocs = docs.filter((doc) => !doc.onchain);
   const verifiedCount = records.filter((record) => record.onchain).length + docs.filter((doc) => doc.onchain).length;
@@ -56,6 +65,44 @@ export function ChainVerification({
       mounted = false;
     };
   }, [latestTxs]);
+
+  const verifyHash = () => {
+    const term = searchHash.trim();
+    setVerificationResult(null);
+    setVerificationError('');
+
+    if (!term) {
+      setVerificationError('Masukkan hash SHA-256 terlebih dahulu.');
+      return;
+    }
+
+    const foundRecord = records.find((record) => record.hash === term || record.hash.startsWith(term));
+    const foundDoc = docs.find((doc) => doc.hash === term || doc.hash.startsWith(term));
+
+    if (foundRecord) {
+      setVerificationResult({
+        title: foundRecord.subject,
+        type: `Nilai akademik - ${foundRecord.semester}`,
+        hash: foundRecord.hash,
+        status: foundRecord.onchain ? 'Terverifikasi on-chain' : 'Terdaftar lokal, belum dimint',
+        onchain: foundRecord.onchain,
+      });
+      return;
+    }
+
+    if (foundDoc) {
+      setVerificationResult({
+        title: foundDoc.title,
+        type: `${foundDoc.type} - ${foundDoc.sem}`,
+        hash: foundDoc.hash,
+        status: foundDoc.onchain ? 'Terverifikasi on-chain' : 'Terdaftar lokal, belum dimint',
+        onchain: foundDoc.onchain,
+      });
+      return;
+    }
+
+    setVerificationError('Hash tidak ditemukan pada ledger atau portofolio lokal.');
+  };
 
   return (
     <section className="view on">
@@ -162,6 +209,37 @@ export function ChainVerification({
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginTop: '20px' }}>
+        <div className="panel-head">
+          <div>
+            <h3>Audit Hash Publik</h3>
+            <div className="ph-sub">Masukkan hash dari rapor/sertifikat untuk mengecek integritasnya</div>
+          </div>
+        </div>
+        <div className="panel-body">
+          <div className="verify-row">
+            <input
+              className="verify-input"
+              placeholder="cth. 0x9f32e9a..."
+              value={searchHash}
+              onChange={(event) => setSearchHash(event.target.value)}
+              onKeyDown={(event) => { if (event.key === 'Enter') verifyHash(); }}
+            />
+            <button className="btn-secondary" onClick={verifyHash}><Search size={15} /> Cek Hash</button>
+          </div>
+          {verificationResult && (
+            <div className={`verify-result ${verificationResult.onchain ? 'ok' : 'pending'}`}>
+              <ShieldCheck size={18} />
+              <div>
+                <b>{verificationResult.title}</b>
+                <span>{verificationResult.type} - {verificationResult.status} - {shortHash(verificationResult.hash)}</span>
+              </div>
+            </div>
+          )}
+          {verificationError && <div className="inline-alert"><Search size={16} /><span>{verificationError}</span></div>}
         </div>
       </div>
 
